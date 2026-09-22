@@ -9,12 +9,25 @@ from dotenv import load_dotenv
 from PIL import Image
 
 from src.extractor import extract_timeline_from_image
-from src.calendar_generator import (
-    generate_ics,
-    generate_outlook_csv,
-    format_decimal_br,
-    format_currency_br,
-)
+try:
+    from src.calendar_generator import (
+        generate_ics,
+        generate_outlook_csv,
+        format_decimal_br,
+        format_currency_br,
+    )
+except ImportError:
+    from src.calendar_generator import generate_ics, generate_outlook_csv
+
+    def format_decimal_br(value, decimals=1):
+        if value is None:
+            return "-"
+        return f"{value:.{decimals}f}".replace(".", ",")
+
+    def format_currency_br(value):
+        if value is None:
+            return "R$ 0,00"
+        return f"R$ {value:.2f}".replace(".", ",")
 
 load_dotenv()
 
