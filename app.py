@@ -112,69 +112,75 @@ if uploaded_file:
         if "timeline_result" in st.session_state:
             timeline = st.session_state["timeline_result"]
 
-            if timeline.summary_stats:
-                st.info(f"📊 **Resumo do Cabeçalho da Imagem:** {timeline.summary_stats}")
+            summary_stats = getattr(timeline, "summary_stats", None)
+            if summary_stats:
+                st.info(f"📊 **Resumo do Cabeçalho da Imagem:** {summary_stats}")
 
             # Métricas
-            driving_disps = [d for d in timeline.displacements if "caminh" not in (d.mode or "").lower() and "pé" not in (d.mode or "").lower()]
-            walking_disps = [d for d in timeline.displacements if "caminh" in (d.mode or "").lower() or "pé" in (d.mode or "").lower()]
+            displacements = getattr(timeline, "displacements", [])
+            visits = getattr(timeline, "visits", [])
 
-            total_km = timeline.total_km or sum((d.distance_km or 0.0) for d in timeline.displacements)
-            driving_km = sum((d.distance_km or 0.0) for d in driving_disps)
+            driving_disps = [d for d in displacements if "caminh" not in getattr(d, "mode", "dirigindo").lower() and "pé" not in getattr(d, "mode", "dirigindo").lower()]
+            walking_disps = [d for d in displacements if "caminh" in getattr(d, "mode", "dirigindo").lower() or "pé" in getattr(d, "mode", "dirigindo").lower()]
+
+            total_km = getattr(timeline, "total_km", None) or sum((getattr(d, "distance_km", 0.0) or 0.0) for d in displacements)
+            driving_km = sum((getattr(d, "distance_km", 0.0) or 0.0) for d in driving_disps)
             total_reimbursement = driving_km * cost_per_km
-            total_driving_min = timeline.total_driving_min or sum((d.duration_min or 0) for d in driving_disps)
-            total_walking_min = timeline.total_walking_min or sum((d.duration_min or 0) for d in walking_disps)
+            total_driving_min = getattr(timeline, "total_driving_min", None) or sum((getattr(d, "duration_min", 0) or 0) for d in driving_disps)
+            total_walking_min = getattr(timeline, "total_walking_min", None) or sum((getattr(d, "duration_min", 0) or 0) for d in walking_disps)
+            total_steps = getattr(timeline, "total_steps", None)
 
             m_cols = st.columns(5)
-            m_cols[0].metric("Data", timeline.date)
+            m_cols[0].metric("Data", getattr(timeline, "date", "-"))
             m_cols[1].metric("Distância Total", f"{format_decimal_br(total_km)} km")
             m_cols[2].metric("Tempo Dirigindo", f"{total_driving_min // 60}h {total_driving_min % 60}m")
-            if total_walking_min > 0 or timeline.total_steps:
-                steps_str = f" ({timeline.total_steps} passos)" if timeline.total_steps else ""
+            if total_walking_min > 0 or total_steps:
+                steps_str = f" ({total_steps} passos)" if total_steps else ""
                 m_cols[3].metric("Tempo a Pé", f"{total_walking_min} min{steps_str}")
             else:
-                m_cols[3].metric("Visitas Registradas", len(timeline.visits))
+                m_cols[3].metric("Visitas Registradas", len(visits))
             m_cols[4].metric("Reembolso (Carro)", format_currency_br(total_reimbursement))
 
             st.markdown("### 🚦 Todos os Deslocamentos Identificados (Carro, A Pé, etc.)")
-            if timeline.displacements:
+            if displacements:
                 from src.calendar_generator import _get_mode_icon
 
                 disp_rows = [
                     {
-                        "Modo": f"{_get_mode_icon(d.mode)} {d.mode}",
-                        "Início": d.start_time,
-                        "Fim": d.end_time,
-                        "Duração": f"{d.duration_min} min" if d.duration_min is not None else "-",
-                        "Distância": f"{format_decimal_br(d.distance_km)} km" if d.distance_km is not None else "-",
-                        "Origem": d.origin_name,
-                        "Destino": d.destination_name,
-                        "Detalhes / Notas": d.details or "-",
+                        "Modo": f"{_get_mode_icon(getattr(d, 'mode', 'Dirigindo'))} {getattr(d, 'mode', 'Dirigindo')}",
+                        "Início": getattr(d, "start_time", "-"),
+                        "Fim": getattr(d, "end_time", "-"),
+                        "Duração": f"{getattr(d, 'duration_min', '-')} min" if getattr(d, "duration_min", None) is not None else "-",
+                        "Distância": f"{format_decimal_br(getattr(d, 'distance_km', None))} km" if getattr(d, "distance_km", None) is not None else "-",
+                        "Origem": getattr(d, "origin_name", "-"),
+                        "Destino": getattr(d, "destination_name", "-"),
+                        "Detalhes / Notas": getattr(d, "details", "-") or "-",
                     }
-                    for d in timeline.displacements
+                    for d in displacements
                 ]
                 st.dataframe(pd.DataFrame(disp_rows), use_container_width=True)
             else:
                 st.info("Nenhum deslocamento identificado nesta captura.")
 
             st.markdown("### 📍 Visitas, Paradas e Estadias")
-            if timeline.visits:
+            if visits:
                 visit_rows = [
                     {
-                        "Chegada": v.start_time,
-                        "Saída": v.end_time,
-                        "Duração": f"{v.duration_min} min" if v.duration_min else "-",
-                        "Local": v.place_name,
-                        "Endereço": v.address or "-",
-                        "Observações": v.details or "-",
+                        "Chegada": getattr(v, "start_time", "-"),
+                        "Saída": getattr(v, "end_time", "-"),
+                        "Duração": f"{getattr(v, 'duration_min', '-')} min" if getattr(v, "duration_min", None) else "-",
+                        "Local": getattr(v, "place_name", "-"),
+                        "Endereço": getattr(v, "address", "-") or "-",
+                        "Observações": getattr(v, "details", "-") or "-",
                     }
-                    for v in timeline.visits
+                    for v in visits
                 ]
                 st.dataframe(pd.DataFrame(visit_rows), use_container_width=True)
 
-            if timeline.additional_notes:
+            additional_notes = getattr(timeline, "additional_notes", None)
+            if additional_notes:
                 with st.expander("📝 Informações e Notas Adicionais da Imagem"):
-                    st.write(timeline.additional_notes)
+                    st.write(additional_notes)
 
             st.markdown("### 📥 Exportar para o Outlook")
             c1, c2, c3 = st.columns(3)

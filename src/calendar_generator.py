@@ -86,31 +86,33 @@ def generate_ics(
 
     if include_displacements:
         for idx, disp in enumerate(timeline.displacements, 1):
-            if only_mode and only_mode.lower() not in (disp.mode or "").lower():
+            mode = getattr(disp, "mode", "Dirigindo")
+            if only_mode and only_mode.lower() not in mode.lower():
                 continue
 
             s_time = disp.start_time.replace(":", "") + "00"
             e_time = disp.end_time.replace(":", "") + "00"
-            icon = _get_mode_icon(disp.mode)
+            icon = _get_mode_icon(mode)
 
-            dist_str = f" ({format_decimal_br(disp.distance_km)} km)" if disp.distance_km is not None else ""
-            summary = f"{icon} {disp.mode}: {disp.origin_name} ➔ {disp.destination_name}{dist_str}"
+            dist_str = f" ({format_decimal_br(getattr(disp, 'distance_km', None))} km)" if getattr(disp, "distance_km", None) is not None else ""
+            summary = f"{icon} {mode}: {disp.origin_name} ➔ {disp.destination_name}{dist_str}"
 
             desc_parts = [
-                f"Deslocamento ({disp.mode}) registrado no Google Maps Linha do Tempo."
+                f"Deslocamento ({mode}) registrado no Google Maps Linha do Tempo."
             ]
-            if disp.distance_km is not None:
+            if getattr(disp, "distance_km", None) is not None:
                 desc_parts.append(f"Distância: {format_decimal_br(disp.distance_km)} km")
-            if disp.duration_min is not None:
+            if getattr(disp, "duration_min", None) is not None:
                 desc_parts.append(f"Duração: {disp.duration_min} min")
-            if disp.details:
-                desc_parts.append(f"Detalhes: {disp.details}")
-            desc_parts.append(f"Origem: {disp.origin_name} ({disp.origin_address or ''})")
-            desc_parts.append(f"Destino: {disp.destination_name} ({disp.destination_address or ''})")
+            details = getattr(disp, "details", None)
+            if details:
+                desc_parts.append(f"Detalhes: {details}")
+            desc_parts.append(f"Origem: {disp.origin_name} ({getattr(disp, 'origin_address', None) or ''})")
+            desc_parts.append(f"Destino: {disp.destination_name} ({getattr(disp, 'destination_address', None) or ''})")
 
             desc = "\n".join(desc_parts)
-            loc = disp.destination_address or disp.destination_name
-            cat = f"Deslocamento ({disp.mode})"
+            loc = getattr(disp, "destination_address", None) or disp.destination_name
+            cat = f"Deslocamento ({mode})"
 
             events.append({
                 "uid": f"disp-{idx}-{clean_date}T{s_time}@airoute2cal",
@@ -136,13 +138,15 @@ def generate_ics(
                 f"Endereço: {visit.address or 'Não informado'}",
                 f"Horário: {visit.start_time} - {visit.end_time}",
             ]
-            if visit.duration_min:
-                desc_parts.append(f"Duração: {visit.duration_min} min")
-            if visit.details:
-                desc_parts.append(f"Observações: {visit.details}")
+            dur_min = getattr(visit, "duration_min", None)
+            if dur_min:
+                desc_parts.append(f"Duração: {dur_min} min")
+            details = getattr(visit, "details", None)
+            if details:
+                desc_parts.append(f"Observações: {details}")
 
             desc = "\n".join(desc_parts)
-            loc = visit.address or visit.place_name
+            loc = getattr(visit, "address", None) or visit.place_name
 
             events.append({
                 "uid": f"visit-{idx}-{clean_date}T{s_time}@airoute2cal",
@@ -190,30 +194,35 @@ def generate_outlook_csv(
     formatted_date = dt_obj.strftime("%d/%m/%Y")
 
     if include_displacements:
-        for disp in timeline.displacements:
-            subject = f"{disp.mode}: {disp.origin_name} -> {disp.destination_name}"
+        for disp in getattr(timeline, "displacements", []):
+            mode = getattr(disp, "mode", "Dirigindo")
+            subject = f"{mode}: {disp.origin_name} -> {disp.destination_name}"
             s_time = f"{disp.start_time}:00"
             e_time = f"{disp.end_time}:00"
-            dist_str = f"{format_decimal_br(disp.distance_km)} km" if disp.distance_km is not None else "N/A"
-            dur_str = f"{disp.duration_min} min" if disp.duration_min is not None else "N/A"
+            dist_km = getattr(disp, "distance_km", None)
+            dur_min = getattr(disp, "duration_min", None)
+            dist_str = f"{format_decimal_br(dist_km)} km" if dist_km is not None else "N/A"
+            dur_str = f"{dur_min} min" if dur_min is not None else "N/A"
             desc = (
-                f"Modo: {disp.mode} | Distância: {dist_str} | Duração: {dur_str} | "
+                f"Modo: {mode} | Distância: {dist_str} | Duração: {dur_str} | "
                 f"De: {disp.origin_name} | Para: {disp.destination_name}"
             )
-            if disp.details:
-                desc += f" | Detalhes: {disp.details}"
-            loc = disp.destination_address or disp.destination_name
-            writer.writerow([subject, formatted_date, s_time, formatted_date, e_time, desc, loc, f"Deslocamento ({disp.mode})"])
+            details = getattr(disp, "details", None)
+            if details:
+                desc += f" | Detalhes: {details}"
+            loc = getattr(disp, "destination_address", None) or disp.destination_name
+            writer.writerow([subject, formatted_date, s_time, formatted_date, e_time, desc, loc, f"Deslocamento ({mode})"])
 
     if include_visits:
-        for visit in timeline.visits:
+        for visit in getattr(timeline, "visits", []):
             subject = f"Visita: {visit.place_name}"
             s_time = f"{visit.start_time}:00"
             e_time = f"{visit.end_time}:00"
-            desc = f"Visita registrada no Google Maps | Local: {visit.place_name} | Endereço: {visit.address or ''}"
-            if visit.details:
-                desc += f" | Obs: {visit.details}"
-            loc = visit.address or visit.place_name
+            desc = f"Visita registrada no Google Maps | Local: {visit.place_name} | Endereço: {getattr(visit, 'address', None) or ''}"
+            details = getattr(visit, "details", None)
+            if details:
+                desc += f" | Obs: {details}"
+            loc = getattr(visit, "address", None) or visit.place_name
             writer.writerow([subject, formatted_date, s_time, formatted_date, e_time, desc, loc, "Visita"])
 
     return output.getvalue()
