@@ -38,6 +38,13 @@ with st.sidebar:
     )
     if not api_key_input:
         st.warning("⚠️ Insira sua chave da API do Gemini para processar as imagens.")
+
+    model_choice = st.selectbox(
+        "Modelo Gemini",
+        options=["gemini-3.6-flash", "gemini-3-flash", "gemini-2.0-flash", "gemini-1.5-flash"],
+        index=0,
+        help="Modelo multimodal da Google. gemini-3.6-flash é o mais recente e veloz.",
+    )
     ref_date = st.date_input("Data de Referência (caso na tela diga 'Hoje')", value=date.today())
     cost_per_km = st.number_input(
         "Reembolso por km rodado (R$/km)",
@@ -77,6 +84,7 @@ if uploaded_file:
                             image,
                             api_key=api_key_input,
                             default_date=str(ref_date),
+                            model_name=model_choice,
                         )
                         st.session_state["timeline_result"] = timeline
                         st.success("Dados extraídos com sucesso!")

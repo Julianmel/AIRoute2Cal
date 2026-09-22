@@ -33,7 +33,7 @@ def extract_timeline_from_image(
     image_path_or_bytes,
     api_key: Optional[str] = None,
     default_date: Optional[str] = None,
-    model_name: str = "gemini-2.5-flash",
+    model_name: Optional[str] = None,
 ) -> TimelineDay:
     """Extrai os dados da captura de tela do Google Maps usando a API Gemini.
 
@@ -41,11 +41,12 @@ def extract_timeline_from_image(
         image_path_or_bytes: Caminho do arquivo ou instância PIL.Image / bytes.
         api_key: Chave da API do Google Gemini (se None, lê de GEMINI_API_KEY).
         default_date: Data padrão no formato YYYY-MM-DD caso a tela mostre apenas "Hoje".
-        model_name: Nome do modelo de visão (padrão: gemini-2.5-flash).
+        model_name: Nome do modelo de visão (padrão: gemini-3.6-flash).
 
     Returns:
         TimelineDay: Instância tipada contendo os deslocamentos e visitas extraídos.
     """
+    model_to_use = model_name or os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
     key = (api_key or os.getenv("GEMINI_API_KEY", "")).strip().strip('"').strip("'")
     if not key or key == "sua_chave_aqui":
         raise ValueError(
@@ -70,7 +71,7 @@ def extract_timeline_from_image(
             prompt_with_date += f"\nObservação: A data de referência é {default_date}."
 
         response = client.models.generate_content(
-            model=model_name,
+            model=model_to_use,
             contents=[img, prompt_with_date],
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -84,7 +85,7 @@ def extract_timeline_from_image(
         import google.generativeai as legacy_genai
 
         legacy_genai.configure(api_key=key)
-        model = legacy_genai.GenerativeModel(model_name)
+        model = legacy_genai.GenerativeModel(model_to_use)
 
         prompt_with_date = (
             EXTRACTION_PROMPT

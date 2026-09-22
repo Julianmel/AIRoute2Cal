@@ -32,6 +32,12 @@ def main():
         help="Gera arquivo contendo apenas os trajetos de carro (deslocamentos)",
     )
     parser.add_argument(
+        "--model",
+        "-m",
+        default="gemini-3.6-flash",
+        help="Modelo do Gemini a ser utilizado (padrão: gemini-3.6-flash)",
+    )
+    parser.add_argument(
         "--api-key",
         help="Chave de API do Gemini (ou defina a variável GEMINI_API_KEY no .env)",
     )
@@ -42,12 +48,13 @@ def main():
         print(f"Erro: Arquivo '{args.image}' não encontrado.", file=sys.stderr)
         sys.exit(1)
 
-    print(f"[*] Analisando imagem com IA: {args.image} ...")
+    print(f"[*] Analisando imagem com IA ({args.model}): {args.image} ...")
     try:
         timeline = extract_timeline_from_image(
             args.image,
             api_key=args.api_key,
             default_date=args.date,
+            model_name=args.model,
         )
     except Exception as e:
         print(f"[!] Erro durante o processamento da imagem: {e}", file=sys.stderr)
