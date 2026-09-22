@@ -9,25 +9,38 @@ from dotenv import load_dotenv
 from PIL import Image
 
 from src.extractor import extract_timeline_from_image
-try:
-    from src.calendar_generator import (
-        generate_ics,
-        generate_outlook_csv,
-        format_decimal_br,
-        format_currency_br,
-    )
-except ImportError:
-    from src.calendar_generator import generate_ics, generate_outlook_csv
+from src.calendar_generator import generate_ics, generate_outlook_csv
 
-    def format_decimal_br(value, decimals=1):
-        if value is None:
-            return "-"
-        return f"{value:.{decimals}f}".replace(".", ",")
 
-    def format_currency_br(value):
-        if value is None:
-            return "R$ 0,00"
-        return f"R$ {value:.2f}".replace(".", ",")
+def format_decimal_br(value, decimals=1):
+    """Formata número decimal com vírgula no padrão brasileiro."""
+    if value is None:
+        return "-"
+    return f"{value:.{decimals}f}".replace(".", ",")
+
+
+def format_currency_br(value):
+    """Formata valor em Reais no padrão brasileiro."""
+    if value is None:
+        return "R$ 0,00"
+    return f"R$ {value:.2f}".replace(".", ",")
+
+
+def get_mode_icon(mode: str) -> str:
+    """Retorna emoji representativo do modo de deslocamento."""
+    m = (mode or "").lower()
+    if any(k in m for k in ["caminh", "pé", "pe", "walk", "pedestre"]):
+        return "🚶"
+    elif any(k in m for k in ["bici", "pedal", "cycl", "bike"]):
+        return "🚲"
+    elif any(k in m for k in ["onibus", "ônibus", "bus", "transit", "metro", "metrô", "trem"]):
+        return "🚌"
+    elif any(k in m for k in ["corr", "run"]):
+        return "🏃"
+    elif any(k in m for k in ["moto", "scooter"]):
+        return "🛵"
+    else:
+        return "🚗"
 
 env_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
 load_dotenv(dotenv_path=env_file_path, override=True)
@@ -154,11 +167,9 @@ if uploaded_file:
 
             st.markdown("### 🚦 Todos os Deslocamentos Identificados (Carro, A Pé, etc.)")
             if displacements:
-                from src.calendar_generator import _get_mode_icon
-
                 disp_rows = [
                     {
-                        "Modo": f"{_get_mode_icon(getattr(d, 'mode', 'Dirigindo'))} {getattr(d, 'mode', 'Dirigindo')}",
+                        "Modo": f"{get_mode_icon(getattr(d, 'mode', 'Dirigindo'))} {getattr(d, 'mode', 'Dirigindo')}",
                         "Início": getattr(d, "start_time", "-"),
                         "Fim": getattr(d, "end_time", "-"),
                         "Duração": f"{getattr(d, 'duration_min', '-')} min" if getattr(d, "duration_min", None) is not None else "-",

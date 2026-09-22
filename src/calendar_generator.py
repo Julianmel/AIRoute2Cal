@@ -21,7 +21,7 @@ def format_currency_br(value: Optional[float]) -> str:
     return f"R$ {value:.2f}".replace(".", ",")
 
 
-def _get_mode_icon(mode: str) -> str:
+def get_mode_icon(mode: str) -> str:
     """Retorna um emoji representativo para o modo de deslocamento."""
     m = (mode or "").lower()
     if any(k in m for k in ["caminh", "pé", "pe", "walk", "pedestre"]):
@@ -36,6 +36,9 @@ def _get_mode_icon(mode: str) -> str:
         return "🛵"
     else:
         return "🚗"
+
+
+_get_mode_icon = get_mode_icon
 
 
 def _escape_ics_text(text: str) -> str:
