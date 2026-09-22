@@ -24,20 +24,21 @@ DIRETRIZES FUNDAMENTAIS:
    - summary_stats: copie o resumo completo do cabeçalho (ex: "43 km, 1h 6 min, 5 km, 35 min, 7 visitas").
 
 2. TODOS OS DESLOCAMENTOS (NUNCA IGNORE NENHUM MODO):
+   - A imagem é uma captura de tela longa de celular (rolagem vertical). VOCÊ DEVE LER DO INÍCIO AO FIM, até a última linha no rodapé da imagem. NUNCA pare no meio!
    - Extraia TODOS os trajetos de movimentação entre locais:
-     * A pé / Caminhando (ícone de pedestre 🚶, texto "A pé" ou "Caminhando"). ATENÇÃO: Mesmo que a caminhada seja de ida e volta saindo e voltando para o mesmo ponto (ex: Casa -> Casa), EXTRAIA SEMPRE este deslocamento!
+     * A pé / Caminhando (ícone de pedestre 🚶, texto "A pé" ou "Caminhando"). ATENÇÃO: Mesmo que a caminhada seja de ida e volta saindo e voltando para o mesmo ponto (ex: Casa -> Casa), EXTRAIA SEMPRE este deslocamento! É muito comum o trecho "A pé" estar próximo ao final da tela.
      * Não há modo de trajeto (ícone de ponto de interrogação ❓ ou texto "Não há modo de trajeto"). Extraia com mode="Não há modo de trajeto".
      * Dirigindo / Carro / Moto (ícone de veículo, texto "Dirigindo").
      * Bicicleta / Pedalando.
      * Transporte público (ônibus, metrô, trem).
    - Para CADA deslocamento:
-     * mode: informe o modo exato ("Caminhando", "Dirigindo", "Bicicleta", "Transporte público", etc.).
-     * origin_name: local exato de onde partiu imediatamente antes.
+     * mode: informe o modo exato ("A pé", "Caminhando", "Dirigindo", "Não há modo de trajeto", "Bicicleta", etc.).
+     * origin_name: local de partida imediatamente anterior.
      * destination_name: próximo local onde chegou.
-     * start_time: horário de partida no formato HH:MM (ex: 07:03).
-     * end_time: horário de chegada no formato HH:MM (ex: 07:25).
-     * distance_km: distância em km (se a tela mostrar em metros, ex: 350 m, converta para km, ex: 0.35).
-     * duration_min: duração em minutos.
+     * start_time: horário de partida no formato HH:MM (ex: 17:52).
+     * end_time: horário de término no formato HH:MM (ex: 18:28).
+     * distance_km: distância em km (ex: 4.9). Se estiver em metros, converta para km.
+     * duration_min: duração em minutos (ex: 35).
      * details: qualquer nota ou dado visível (ex: passos, calorias, observações).
 
 3. TODAS AS PARADAS, VISITAS E ESTADIAS:

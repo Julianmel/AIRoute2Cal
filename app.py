@@ -133,6 +133,13 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file:
+    # Limpa dados da imagem anterior se um novo arquivo for carregado
+    file_signature = f"{uploaded_file.name}_{uploaded_file.size}"
+    if st.session_state.get("current_file_signature") != file_signature:
+        st.session_state["current_file_signature"] = file_signature
+        if "timeline_result" in st.session_state:
+            del st.session_state["timeline_result"]
+
     col_img, col_data = st.columns([1, 2])
 
     image = Image.open(uploaded_file)
@@ -155,7 +162,8 @@ if uploaded_file:
                             model_name=model_choice,
                         )
                         st.session_state["timeline_result"] = timeline
-                        st.success("Dados extraídos com sucesso!")
+                        st.success(f"Dados extraídos com sucesso! ({len(timeline.displacements)} deslocamentos e {len(timeline.visits)} visitas)")
+                        st.rerun()
                     except Exception as err:
                         st.error(f"Erro ao processar imagem: {err}")
 
