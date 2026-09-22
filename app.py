@@ -25,12 +25,19 @@ st.caption("Converta capturas da Linha do Tempo do Google Maps em eventos no Cal
 # Barra lateral de configurações
 with st.sidebar:
     st.header("⚙️ Configurações")
+    env_key = os.getenv("GEMINI_API_KEY", "").strip().strip('"').strip("'")
+    if env_key == "sua_chave_aqui":
+        env_key = ""
+
     api_key_input = st.text_input(
         "Chave Gemini API",
-        value=os.getenv("GEMINI_API_KEY", ""),
+        value=env_key,
         type="password",
+        placeholder="AIzaSy...",
         help="Obtenha uma chave gratuita no Google AI Studio (https://aistudio.google.com/).",
     )
+    if not api_key_input:
+        st.warning("⚠️ Insira sua chave da API do Gemini para processar as imagens.")
     ref_date = st.date_input("Data de Referência (caso na tela diga 'Hoje')", value=date.today())
     cost_per_km = st.number_input(
         "Reembolso por km rodado (R$/km)",

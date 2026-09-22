@@ -46,11 +46,11 @@ def extract_timeline_from_image(
     Returns:
         TimelineDay: Instância tipada contendo os deslocamentos e visitas extraídos.
     """
-    key = api_key or os.getenv("GEMINI_API_KEY")
-    if not key:
+    key = (api_key or os.getenv("GEMINI_API_KEY", "")).strip().strip('"').strip("'")
+    if not key or key == "sua_chave_aqui":
         raise ValueError(
-            "Chave de API do Gemini não configurada. Defina a variável de ambiente "
-            "GEMINI_API_KEY ou informe-a diretamente."
+            "Chave de API do Gemini não configurada ou contém o texto de exemplo ('sua_chave_aqui').\n"
+            "Crie uma chave gratuita no Google AI Studio (https://aistudio.google.com/) e informe no aplicativo."
         )
 
     # Carrega a imagem via PIL
