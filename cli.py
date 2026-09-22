@@ -34,8 +34,8 @@ def main():
     parser.add_argument(
         "--model",
         "-m",
-        default="gemini-3.6-flash",
-        help="Modelo do Gemini a ser utilizado (padrão: gemini-3.6-flash)",
+        default="gemini-3.5-flash-lite",
+        help="Modelo do Gemini a ser utilizado (padrão: gemini-3.5-flash-lite)",
     )
     parser.add_argument(
         "--api-key",
@@ -79,7 +79,7 @@ def main():
     )
     with open(ics_filename, "w", encoding="utf-8") as f:
         f.write(ics_content)
-    print(f"[✓] Arquivo iCalendar gerado: {ics_filename}")
+    print(f"[OK] Arquivo iCalendar gerado: {ics_filename}")
 
     # 2. Gera o arquivo CSV do Outlook
     csv_filename = os.path.join(args.output_dir, f"deslocamentos_{clean_date}.csv")
@@ -90,7 +90,7 @@ def main():
     )
     with open(csv_filename, "w", encoding="utf-8") as f:
         f.write(csv_content)
-    print(f"[✓] Arquivo CSV Outlook gerado: {csv_filename}")
+    print(f"[OK] Arquivo CSV Outlook gerado: {csv_filename}")
 
 
 if __name__ == "__main__":

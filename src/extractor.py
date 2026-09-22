@@ -46,7 +46,7 @@ def extract_timeline_from_image(
     Returns:
         TimelineDay: Instância tipada contendo os deslocamentos e visitas extraídos.
     """
-    model_to_use = model_name or os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+    model_to_use = model_name or os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
     key = (api_key or os.getenv("GEMINI_API_KEY", "")).strip().strip('"').strip("'")
     if not key or key == "sua_chave_aqui":
         raise ValueError(
@@ -60,9 +60,9 @@ def extract_timeline_from_image(
     else:
         img = Image.open(image_path_or_bytes)
 
-    # Lista de modelos prioritários com fallback automático em caso de sobrecarga (503) ou descontinuação (404)
+    # Lista de modelos prioritários com fallback automático em caso de sobrecarga temporária (503)
     candidate_models = [model_to_use]
-    for m in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-3-flash", "gemini-1.5-pro"]:
+    for m in ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-3.6-flash"]:
         if m not in candidate_models:
             candidate_models.append(m)
 

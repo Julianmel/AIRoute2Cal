@@ -41,9 +41,9 @@ with st.sidebar:
 
     model_choice = st.selectbox(
         "Modelo Gemini",
-        options=["gemini-3.6-flash", "gemini-3-flash", "gemini-2.0-flash", "gemini-1.5-flash"],
+        options=["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-3.6-flash"],
         index=0,
-        help="Modelo multimodal da Google. gemini-3.6-flash é o mais recente e veloz.",
+        help="Modelo multimodal do Google. gemini-3.5-flash-lite é ultra-rápido e tem alta disponibilidade.",
     )
     ref_date = st.date_input("Data de Referência (caso na tela diga 'Hoje')", value=date.today())
     cost_per_km = st.number_input(
