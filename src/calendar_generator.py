@@ -34,6 +34,8 @@ def get_mode_icon(mode: str) -> str:
         return "🏃"
     elif any(k in m for k in ["moto", "scooter"]):
         return "🛵"
+    elif any(k in m for k in ["não há", "nao ha", "sem modo", "desconhecido", "?"]):
+        return "❓"
     else:
         return "🚗"
 

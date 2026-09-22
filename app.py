@@ -39,6 +39,8 @@ def get_mode_icon(mode: str) -> str:
         return "🏃"
     elif any(k in m for k in ["moto", "scooter"]):
         return "🛵"
+    elif any(k in m for k in ["não há", "nao ha", "sem modo", "desconhecido", "?"]):
+        return "❓"
     else:
         return "🚗"
 
@@ -49,6 +51,30 @@ st.set_page_config(
     page_title="AIRoute2Cal - Google Maps para Outlook",
     page_icon="📍",
     layout="wide",
+)
+
+# Estilo personalizado para reduzir tamanho das fontes do cabeçalho de métricas
+st.markdown(
+    """
+    <style>
+    [data-testid="stMetricValue"] {
+        font-size: 1.15rem !important;
+        font-weight: 600 !important;
+        line-height: 1.3 !important;
+    }
+    [data-testid="stMetricLabel"] {
+        font-size: 0.80rem !important;
+        font-weight: 500 !important;
+    }
+    div[data-testid="stMetric"] {
+        background-color: rgba(240, 243, 248, 0.45);
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(200, 205, 220, 0.35);
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
 st.title("📍 AIRoute2Cal")

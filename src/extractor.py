@@ -17,15 +17,18 @@ Analise minuciosamente a imagem fornecida e extraia absolutamente tudo que estiv
 
 DIRETRIZES FUNDAMENTAIS:
 1. DATA E RESUMO DO TOPO:
-   - Identifique a data do dia informado (ex: "Hoje", datas explícitas no topo).
-   - Extraia as estatísticas gerais do topo: quilometragem total, tempo total dirigindo, tempo total caminhando/a pé, total de visitas e passos (se houver).
-   - summary_stats: copie o resumo completo do cabeçalho (ex: "73 km, 2h 33 min, 9 visitas").
+   - Identifique a data do dia informado:
+     * Se a tela indicar "Ontem", calcule a data (YYYY-MM-DD) subtraindo 1 dia da data de referência.
+     * Se indicar "Hoje", utilize a data de referência.
+   - Extraia as estatísticas gerais do topo: quilometragem total de carro e a pé, tempo total dirigindo e caminhando, total de visitas e passos (se houver).
+   - summary_stats: copie o resumo completo do cabeçalho (ex: "43 km, 1h 6 min, 5 km, 35 min, 7 visitas").
 
 2. TODOS OS DESLOCAMENTOS (NUNCA IGNORE NENHUM MODO):
    - Extraia TODOS os trajetos de movimentação entre locais:
-     * Caminhando / A pé (ícone de pedestre, passos, texto "Caminhando" ou "A pé").
+     * A pé / Caminhando (ícone de pedestre 🚶, texto "A pé" ou "Caminhando"). ATENÇÃO: Mesmo que a caminhada seja de ida e volta saindo e voltando para o mesmo ponto (ex: Casa -> Casa), EXTRAIA SEMPRE este deslocamento!
+     * Não há modo de trajeto (ícone de ponto de interrogação ❓ ou texto "Não há modo de trajeto"). Extraia com mode="Não há modo de trajeto".
      * Dirigindo / Carro / Moto (ícone de veículo, texto "Dirigindo").
-     * Bicicleta / Pedalando (ícone de bicicleta).
+     * Bicicleta / Pedalando.
      * Transporte público (ônibus, metrô, trem).
    - Para CADA deslocamento:
      * mode: informe o modo exato ("Caminhando", "Dirigindo", "Bicicleta", "Transporte público", etc.).
