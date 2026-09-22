@@ -60,43 +60,73 @@ def extract_timeline_from_image(
     else:
         img = Image.open(image_path_or_bytes)
 
-    # Tenta usar a biblioteca mais recente google-genai
-    try:
-        from google import genai
-        from google.genai import types
+    # Lista de modelos prioritários com fallback automático em caso de sobrecarga (503) ou descontinuação (404)
+    candidate_models = [model_to_use]
+    for m in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-3-flash", "gemini-1.5-pro"]:
+        if m not in candidate_models:
+            candidate_models.append(m)
 
-        client = genai.Client(api_key=key)
-        prompt_with_date = EXTRACTION_PROMPT
-        if default_date:
-            prompt_with_date += f"\nObservação: A data de referência é {default_date}."
+    last_error = None
 
-        response = client.models.generate_content(
-            model=model_to_use,
-            contents=[img, prompt_with_date],
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=TimelineDay,
-            ),
-        )
-        return TimelineDay.model_validate_json(response.text)
+    for current_model in candidate_models:
+        for attempt in range(2):  # tenta até 2 vezes por modelo antes de passar para o fallback
+            try:
+                # Tenta usar a biblioteca mais recente google-genai
+                try:
+                    from google import genai
+                    from google.genai import types
 
-    except ImportError:
-        # Fallback para google.generativeai caso instalado
-        import google.generativeai as legacy_genai
+                    client = genai.Client(api_key=key)
+                    prompt_with_date = EXTRACTION_PROMPT
+                    if default_date:
+                        prompt_with_date += f"\nObservação: A data de referência é {default_date}."
 
-        legacy_genai.configure(api_key=key)
-        model = legacy_genai.GenerativeModel(model_to_use)
+                    response = client.models.generate_content(
+                        model=current_model,
+                        contents=[img, prompt_with_date],
+                        config=types.GenerateContentConfig(
+                            response_mime_type="application/json",
+                            response_schema=TimelineDay,
+                        ),
+                    )
+                    return TimelineDay.model_validate_json(response.text)
 
-        prompt_with_date = (
-            EXTRACTION_PROMPT
-            + "\nRetorne um JSON válido correspondente ao seguinte esquema Pydantic:\n"
-            + json.dumps(TimelineDay.model_json_schema(), ensure_ascii=False)
-        )
-        if default_date:
-            prompt_with_date += f"\nObservação: A data de referência é {default_date}."
+                except ImportError:
+                    # Fallback para google.generativeai caso instalado
+                    import google.generativeai as legacy_genai
 
-        response = model.generate_content(
-            [img, prompt_with_date],
-            generation_config={"response_mime_type": "application/json"},
-        )
-        return TimelineDay.model_validate_json(response.text)
+                    legacy_genai.configure(api_key=key)
+                    model = legacy_genai.GenerativeModel(current_model)
+
+                    prompt_with_date = (
+                        EXTRACTION_PROMPT
+                        + "\nRetorne um JSON válido correspondente ao seguinte esquema Pydantic:\n"
+                        + json.dumps(TimelineDay.model_json_schema(), ensure_ascii=False)
+                    )
+                    if default_date:
+                        prompt_with_date += f"\nObservação: A data de referência é {default_date}."
+
+                    response = model.generate_content(
+                        [img, prompt_with_date],
+                        generation_config={"response_mime_type": "application/json"},
+                    )
+                    return TimelineDay.model_validate_json(response.text)
+
+            except Exception as e:
+                err_str = str(e)
+                last_error = e
+                # Se for erro transitório de sobrecarga (503) ou modelo não encontrado (404), aguarda ou tenta o próximo
+                if "503" in err_str or "UNAVAILABLE" in err_str or "high demand" in err_str:
+                    import time
+                    time.sleep(1.5)
+                    continue
+                elif "404" in err_str or "NOT_FOUND" in err_str:
+                    break  # passa direto para o próximo modelo candidato
+                else:
+                    # Se for outro erro (ex: chave inválida), propaga imediatamente
+                    raise e
+
+    raise RuntimeError(
+        f"Não foi possível processar a imagem após tentar os modelos {candidate_models}.\n"
+        f"Último erro recebido: {last_error}"
+    )
