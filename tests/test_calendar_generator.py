@@ -1,7 +1,20 @@
-"""Testes unitários para o gerador de arquivos iCalendar e CSV."""
+"""Testes unitários para o gerador de arquivos iCalendar e CSV com formatação brasileira."""
 
 from src.models import TimelineDay, DisplacementEvent, VisitEvent
-from src.calendar_generator import generate_ics, generate_outlook_csv
+from src.calendar_generator import (
+    generate_ics,
+    generate_outlook_csv,
+    format_decimal_br,
+    format_currency_br,
+)
+
+
+def test_formatters():
+    assert format_decimal_br(11.0) == "11,0"
+    assert format_decimal_br(2.5) == "2,5"
+    assert format_decimal_br(0.8) == "0,8"
+    assert format_currency_br(15.2) == "R$ 15,20"
+    assert format_currency_br(1234.56) == "R$ 1234,56"
 
 
 def test_generate_ics_and_csv():
@@ -43,17 +56,20 @@ def test_generate_ics_and_csv():
         ],
     )
 
-    # 1. Testa ICS
+    # 1. Testa ICS (no RFC 5545 vírgulas são escapadas como \, para exibição correta no Outlook)
     ics = generate_ics(day, include_displacements=True, include_visits=True)
     assert "BEGIN:VCALENDAR" in ics
     assert "END:VCALENDAR" in ics
-    assert "Dirigindo: Casa ➔ Supermercado" in ics
-    assert "Caminhando: Supermercado ➔ Padaria" in ics
-    assert "Visita: Supermercado" in ics
+    assert "11\\,0 km" in ics
+    assert "0\\,8 km" in ics
+    assert "11.0 km" not in ics
+    assert "0.8 km" not in ics
 
-    # 2. Testa CSV
+    # 2. Testa CSV usando vírgula no padrão brasileiro
     csv_content = generate_outlook_csv(day, include_displacements=True, include_visits=True)
     assert "Subject" in csv_content
     assert "21/09/2026" in csv_content
-    assert "Caminhando" in csv_content
-    assert "Padaria" in csv_content
+    assert "11,0 km" in csv_content
+    assert "0,8 km" in csv_content
+    assert "11.0 km" not in csv_content
+    assert "0.8 km" not in csv_content

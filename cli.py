@@ -6,7 +6,7 @@ import sys
 from dotenv import load_dotenv
 
 from src.extractor import extract_timeline_from_image
-from src.calendar_generator import generate_ics, generate_outlook_csv
+from src.calendar_generator import generate_ics, generate_outlook_csv, format_decimal_br
 
 
 def main():
@@ -67,7 +67,7 @@ def main():
     print(f"    - Deslocamentos: {len(timeline.displacements)} trajetos")
     print(f"    - Visitas/paradas: {len(timeline.visits)} locais")
     if timeline.total_km:
-        print(f"    - Distância total: {timeline.total_km} km")
+        print(f"    - Distância total: {format_decimal_br(timeline.total_km)} km")
 
     # 1. Gera o arquivo ICS
     ics_filename = os.path.join(args.output_dir, f"deslocamentos_{clean_date}.ics")

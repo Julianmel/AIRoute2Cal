@@ -9,7 +9,12 @@ from dotenv import load_dotenv
 from PIL import Image
 
 from src.extractor import extract_timeline_from_image
-from src.calendar_generator import generate_ics, generate_outlook_csv
+from src.calendar_generator import (
+    generate_ics,
+    generate_outlook_csv,
+    format_decimal_br,
+    format_currency_br,
+)
 
 load_dotenv()
 
@@ -109,14 +114,14 @@ if uploaded_file:
 
             m_cols = st.columns(5)
             m_cols[0].metric("Data", timeline.date)
-            m_cols[1].metric("Distância Total", f"{total_km:.1f} km")
+            m_cols[1].metric("Distância Total", f"{format_decimal_br(total_km)} km")
             m_cols[2].metric("Tempo Dirigindo", f"{total_driving_min // 60}h {total_driving_min % 60}m")
             if total_walking_min > 0 or timeline.total_steps:
                 steps_str = f" ({timeline.total_steps} passos)" if timeline.total_steps else ""
                 m_cols[3].metric("Tempo a Pé", f"{total_walking_min} min{steps_str}")
             else:
                 m_cols[3].metric("Visitas Registradas", len(timeline.visits))
-            m_cols[4].metric("Reembolso (Carro)", f"R$ {total_reimbursement:.2f}")
+            m_cols[4].metric("Reembolso (Carro)", format_currency_br(total_reimbursement))
 
             st.markdown("### 🚦 Todos os Deslocamentos Identificados (Carro, A Pé, etc.)")
             if timeline.displacements:
@@ -128,7 +133,7 @@ if uploaded_file:
                         "Início": d.start_time,
                         "Fim": d.end_time,
                         "Duração": f"{d.duration_min} min" if d.duration_min is not None else "-",
-                        "Distância": f"{d.distance_km:.1f} km" if d.distance_km is not None else "-",
+                        "Distância": f"{format_decimal_br(d.distance_km)} km" if d.distance_km is not None else "-",
                         "Origem": d.origin_name,
                         "Destino": d.destination_name,
                         "Detalhes / Notas": d.details or "-",

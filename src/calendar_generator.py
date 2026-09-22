@@ -7,6 +7,20 @@ import io
 from .models import TimelineDay, DisplacementEvent, VisitEvent
 
 
+def format_decimal_br(value: Optional[float], decimals: int = 1) -> str:
+    """Formata número decimal usando vírgula como separador (padrão brasileiro)."""
+    if value is None:
+        return "-"
+    return f"{value:.{decimals}f}".replace(".", ",")
+
+
+def format_currency_br(value: Optional[float]) -> str:
+    """Formata valor monetário em Reais no padrão brasileiro (ex: R$ 12,50)."""
+    if value is None:
+        return "R$ 0,00"
+    return f"R$ {value:.2f}".replace(".", ",")
+
+
 def _get_mode_icon(mode: str) -> str:
     """Retorna um emoji representativo para o modo de deslocamento."""
     m = (mode or "").lower()
@@ -79,14 +93,14 @@ def generate_ics(
             e_time = disp.end_time.replace(":", "") + "00"
             icon = _get_mode_icon(disp.mode)
 
-            dist_str = f" ({disp.distance_km:.1f} km)" if disp.distance_km is not None else ""
+            dist_str = f" ({format_decimal_br(disp.distance_km)} km)" if disp.distance_km is not None else ""
             summary = f"{icon} {disp.mode}: {disp.origin_name} ➔ {disp.destination_name}{dist_str}"
 
             desc_parts = [
                 f"Deslocamento ({disp.mode}) registrado no Google Maps Linha do Tempo."
             ]
             if disp.distance_km is not None:
-                desc_parts.append(f"Distância: {disp.distance_km:.1f} km")
+                desc_parts.append(f"Distância: {format_decimal_br(disp.distance_km)} km")
             if disp.duration_min is not None:
                 desc_parts.append(f"Duração: {disp.duration_min} min")
             if disp.details:
@@ -180,7 +194,7 @@ def generate_outlook_csv(
             subject = f"{disp.mode}: {disp.origin_name} -> {disp.destination_name}"
             s_time = f"{disp.start_time}:00"
             e_time = f"{disp.end_time}:00"
-            dist_str = f"{disp.distance_km:.1f} km" if disp.distance_km is not None else "N/A"
+            dist_str = f"{format_decimal_br(disp.distance_km)} km" if disp.distance_km is not None else "N/A"
             dur_str = f"{disp.duration_min} min" if disp.duration_min is not None else "N/A"
             desc = (
                 f"Modo: {disp.mode} | Distância: {dist_str} | Duração: {dur_str} | "
