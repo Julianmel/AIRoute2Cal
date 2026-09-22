@@ -29,7 +29,8 @@ except ImportError:
             return "R$ 0,00"
         return f"R$ {value:.2f}".replace(".", ",")
 
-load_dotenv()
+env_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+load_dotenv(dotenv_path=env_file_path, override=True)
 
 st.set_page_config(
     page_title="AIRoute2Cal - Google Maps para Outlook",
@@ -47,15 +48,25 @@ with st.sidebar:
     if env_key == "sua_chave_aqui":
         env_key = ""
 
-    api_key_input = st.text_input(
-        "Chave Gemini API",
-        value=env_key,
-        type="password",
-        placeholder="AIzaSy...",
-        help="Obtenha uma chave gratuita no Google AI Studio (https://aistudio.google.com/).",
-    )
-    if not api_key_input:
+    if env_key:
+        st.success("✅ Chave da API carregada do `.env`")
+        api_key_input = st.text_input(
+            "Chave Gemini API",
+            value=env_key,
+            type="password",
+            help="Chave carregada automaticamente do arquivo .env. Você pode alterar aqui se quiser.",
+        )
+    else:
+        api_key_input = st.text_input(
+            "Chave Gemini API",
+            value="",
+            type="password",
+            placeholder="AIzaSy...",
+            help="Obtenha uma chave gratuita no Google AI Studio (https://aistudio.google.com/).",
+        )
         st.warning("⚠️ Insira sua chave da API do Gemini para processar as imagens.")
+
+    active_api_key = (api_key_input or env_key).strip().strip('"').strip("'")
 
     model_choice = st.selectbox(
         "Modelo Gemini",
@@ -93,14 +104,14 @@ if uploaded_file:
     with col_data:
         st.subheader("Processamento com IA")
         if st.button("🚀 Extrair Deslocamentos e Paradas", type="primary"):
-            if not api_key_input:
-                st.error("Informe sua chave de API do Gemini na barra lateral para prosseguir.")
+            if not active_api_key or active_api_key == "sua_chave_aqui":
+                st.error("Informe sua chave de API do Gemini na barra lateral ou no arquivo .env para prosseguir.")
             else:
                 with st.spinner("Analisando captura com Gemini Vision..."):
                     try:
                         timeline = extract_timeline_from_image(
                             image,
-                            api_key=api_key_input,
+                            api_key=active_api_key,
                             default_date=str(ref_date),
                             model_name=model_choice,
                         )

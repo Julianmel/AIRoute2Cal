@@ -4,7 +4,11 @@ import os
 import json
 from typing import Optional
 from PIL import Image
+from dotenv import load_dotenv
 from .models import TimelineDay
+
+# Carrega as variáveis do .env garantindo atualização
+load_dotenv(override=True)
 
 # Prompt de sistema especializado para interpretação da Linha do Tempo do Google Maps
 EXTRACTION_PROMPT = """
@@ -65,6 +69,9 @@ def extract_timeline_from_image(
     Returns:
         TimelineDay: Instância tipada contendo os deslocamentos e visitas extraídos.
     """
+    from dotenv import load_dotenv
+    load_dotenv(override=True)
+
     model_to_use = model_name or os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
     key = (api_key or os.getenv("GEMINI_API_KEY", "")).strip().strip('"').strip("'")
     if not key or key == "sua_chave_aqui":
