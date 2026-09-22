@@ -94,35 +94,52 @@ if uploaded_file:
         if "timeline_result" in st.session_state:
             timeline = st.session_state["timeline_result"]
 
+            if timeline.summary_stats:
+                st.info(f"📊 **Resumo do Cabeçalho da Imagem:** {timeline.summary_stats}")
+
             # Métricas
-            total_km = timeline.total_km or sum(d.distance_km for d in timeline.displacements)
-            total_reimbursement = total_km * cost_per_km
-            total_duration = timeline.total_driving_min or sum(d.duration_min for d in timeline.displacements)
+            driving_disps = [d for d in timeline.displacements if "caminh" not in (d.mode or "").lower() and "pé" not in (d.mode or "").lower()]
+            walking_disps = [d for d in timeline.displacements if "caminh" in (d.mode or "").lower() or "pé" in (d.mode or "").lower()]
 
-            m1, m2, m3, m4 = st.columns(4)
-            m1.metric("Data", timeline.date)
-            m2.metric("Distância Total", f"{total_km:.1f} km")
-            m3.metric("Tempo Dirigindo", f"{total_duration // 60}h {total_duration % 60}m")
-            m4.metric("Reembolso Estimado", f"R$ {total_reimbursement:.2f}")
+            total_km = timeline.total_km or sum((d.distance_km or 0.0) for d in timeline.displacements)
+            driving_km = sum((d.distance_km or 0.0) for d in driving_disps)
+            total_reimbursement = driving_km * cost_per_km
+            total_driving_min = timeline.total_driving_min or sum((d.duration_min or 0) for d in driving_disps)
+            total_walking_min = timeline.total_walking_min or sum((d.duration_min or 0) for d in walking_disps)
 
-            st.markdown("### 🚗 Deslocamentos Identificados")
+            m_cols = st.columns(5)
+            m_cols[0].metric("Data", timeline.date)
+            m_cols[1].metric("Distância Total", f"{total_km:.1f} km")
+            m_cols[2].metric("Tempo Dirigindo", f"{total_driving_min // 60}h {total_driving_min % 60}m")
+            if total_walking_min > 0 or timeline.total_steps:
+                steps_str = f" ({timeline.total_steps} passos)" if timeline.total_steps else ""
+                m_cols[3].metric("Tempo a Pé", f"{total_walking_min} min{steps_str}")
+            else:
+                m_cols[3].metric("Visitas Registradas", len(timeline.visits))
+            m_cols[4].metric("Reembolso (Carro)", f"R$ {total_reimbursement:.2f}")
+
+            st.markdown("### 🚦 Todos os Deslocamentos Identificados (Carro, A Pé, etc.)")
             if timeline.displacements:
+                from src.calendar_generator import _get_mode_icon
+
                 disp_rows = [
                     {
+                        "Modo": f"{_get_mode_icon(d.mode)} {d.mode}",
                         "Início": d.start_time,
                         "Fim": d.end_time,
-                        "Duração": f"{d.duration_min} min",
-                        "Distância": f"{d.distance_km:.1f} km",
+                        "Duração": f"{d.duration_min} min" if d.duration_min is not None else "-",
+                        "Distância": f"{d.distance_km:.1f} km" if d.distance_km is not None else "-",
                         "Origem": d.origin_name,
                         "Destino": d.destination_name,
+                        "Detalhes / Notas": d.details or "-",
                     }
                     for d in timeline.displacements
                 ]
                 st.dataframe(pd.DataFrame(disp_rows), use_container_width=True)
             else:
-                st.info("Nenhum deslocamento de carro identificado nesta captura.")
+                st.info("Nenhum deslocamento identificado nesta captura.")
 
-            st.markdown("### 📍 Visitas e Permanências")
+            st.markdown("### 📍 Visitas, Paradas e Estadias")
             if timeline.visits:
                 visit_rows = [
                     {
@@ -131,24 +148,29 @@ if uploaded_file:
                         "Duração": f"{v.duration_min} min" if v.duration_min else "-",
                         "Local": v.place_name,
                         "Endereço": v.address or "-",
+                        "Observações": v.details or "-",
                     }
                     for v in timeline.visits
                 ]
                 st.dataframe(pd.DataFrame(visit_rows), use_container_width=True)
 
+            if timeline.additional_notes:
+                with st.expander("📝 Informações e Notas Adicionais da Imagem"):
+                    st.write(timeline.additional_notes)
+
             st.markdown("### 📥 Exportar para o Outlook")
             c1, c2, c3 = st.columns(3)
 
-            # ICS apenas deslocamentos
+            # ICS apenas deslocamentos (todos os modos)
             ics_disp = generate_ics(timeline, include_displacements=True, include_visits=False)
             c1.download_button(
-                label="📅 Baixar .ICS (Apenas Deslocamentos)",
+                label="📅 Baixar .ICS (Deslocamentos: Carro + A Pé)",
                 data=ics_disp.encode("utf-8"),
                 file_name=f"deslocamentos_{timeline.date}.ics",
                 mime="text/calendar",
             )
 
-            # ICS completo
+            # ICS completo (deslocamentos + visitas)
             ics_all = generate_ics(timeline, include_displacements=True, include_visits=True)
             c2.download_button(
                 label="📅 Baixar .ICS (Completo: Trajetos + Visitas)",
@@ -158,10 +180,10 @@ if uploaded_file:
             )
 
             # CSV Outlook
-            csv_data = generate_outlook_csv(timeline, include_displacements=True, include_visits=False)
+            csv_data = generate_outlook_csv(timeline, include_displacements=True, include_visits=True)
             c3.download_button(
                 label="📊 Baixar .CSV (Assistente Outlook)",
                 data=csv_data.encode("utf-8"),
-                file_name=f"deslocamentos_{timeline.date}.csv",
+                file_name=f"linha_do_tempo_{timeline.date}.csv",
                 mime="text/csv",
             )

@@ -8,24 +8,43 @@ from .models import TimelineDay
 
 # Prompt de sistema especializado para interpretação da Linha do Tempo do Google Maps
 EXTRACTION_PROMPT = """
-Você é um especialista em ler capturas de tela do aplicativo Google Maps (seção "Linha do Tempo" / "Timeline").
-Analise cuidadosamente a imagem fornecida e extraia todos os dados de deslocamentos e visitas.
+Você é um especialista em ler e extrair TODAS as informações de capturas de tela do aplicativo Google Maps (seção "Linha do Tempo" / "Timeline").
+Analise minuciosamente a imagem fornecida e extraia absolutamente tudo que estiver visível na captura, sem omitir nenhum evento.
 
-Diretrizes:
-1. Identifique a data do dia reportado (ex: "Hoje", datas explícitas, ou infira pelo contexto/nome se fornecido). Se não houver data explícita, use a data informada no cabeçalho ou parâmetro.
-2. Identifique a quilometragem total e o tempo total dirigindo no resumo superior, se presente.
-3. Para cada trecho de carro ("Dirigindo" ou ícone de carro):
-   - Local de Origem: o local de onde o veículo partiu imediatamente antes.
-   - Local de Destino: o próximo local de parada onde chegou.
-   - Horário de início e término no formato HH:MM (ex: 07:03 até 07:25).
-   - Distância em km (número decimal, ex: 11.0).
-   - Duração em minutos (número inteiro, ex: 22).
-4. Para cada parada/visita (ícones de pin, loja, casa, etc.):
-   - Nome do local (ex: Casa, Supermercado Portal, etc.).
-   - Endereço completo visível.
-   - Horário de permanência (início e fim no formato HH:MM).
-   - Duração em minutos, se informada.
-5. Devolva a resposta estritamente no esquema JSON especificado.
+DIRETRIZES FUNDAMENTAIS:
+1. DATA E RESUMO DO TOPO:
+   - Identifique a data do dia informado (ex: "Hoje", datas explícitas no topo).
+   - Extraia as estatísticas gerais do topo: quilometragem total, tempo total dirigindo, tempo total caminhando/a pé, total de visitas e passos (se houver).
+   - summary_stats: copie o resumo completo do cabeçalho (ex: "73 km, 2h 33 min, 9 visitas").
+
+2. TODOS OS DESLOCAMENTOS (NUNCA IGNORE NENHUM MODO):
+   - Extraia TODOS os trajetos de movimentação entre locais:
+     * Caminhando / A pé (ícone de pedestre, passos, texto "Caminhando" ou "A pé").
+     * Dirigindo / Carro / Moto (ícone de veículo, texto "Dirigindo").
+     * Bicicleta / Pedalando (ícone de bicicleta).
+     * Transporte público (ônibus, metrô, trem).
+   - Para CADA deslocamento:
+     * mode: informe o modo exato ("Caminhando", "Dirigindo", "Bicicleta", "Transporte público", etc.).
+     * origin_name: local exato de onde partiu imediatamente antes.
+     * destination_name: próximo local onde chegou.
+     * start_time: horário de partida no formato HH:MM (ex: 07:03).
+     * end_time: horário de chegada no formato HH:MM (ex: 07:25).
+     * distance_km: distância em km (se a tela mostrar em metros, ex: 350 m, converta para km, ex: 0.35).
+     * duration_min: duração em minutos.
+     * details: qualquer nota ou dado visível (ex: passos, calorias, observações).
+
+3. TODAS AS PARADAS, VISITAS E ESTADIAS:
+   - Extraia todos os locais visitados (residências, empresas, supermercados, órgãos públicos, etc.).
+   - place_name: nome do estabelecimento ou local.
+   - address: endereço exibido na tela.
+   - start_time e end_time: horário de entrada e saída (HH:MM).
+   - duration_min: duração da permanência em minutos, se informada.
+   - details: notas ou eventos associados (ex: "Saiu às 07:03", "Chegou às 19:33", etc.).
+
+4. ANOTAÇÕES ADICIONAIS:
+   - additional_notes: registre qualquer outro detalhe, nota de viagem ou contexto textual presente na captura.
+
+Devolva a resposta estritamente conforme o esquema JSON especificado.
 """
 
 
