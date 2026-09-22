@@ -23,11 +23,17 @@ DIRETRIZES FUNDAMENTAIS:
    - Extraia as estatísticas gerais do topo: quilometragem total de carro e a pé, tempo total dirigindo e caminhando, total de visitas e passos (se houver).
    - summary_stats: copie o resumo completo do cabeçalho (ex: "43 km, 1h 6 min, 5 km, 35 min, 7 visitas").
 
-2. TODOS OS DESLOCAMENTOS (NUNCA IGNORE NENHUM MODO):
+2. CONFERÊNCIA OBRIGATÓRIA COM OS TOTAIS DO TOPO:
+   - ATENÇÃO CRÍTICA: Observe atentamente os ícones e números no resumo no topo da tela.
+     * Se houver o ícone de pedestre 🚶 com quilometragem e tempo (ex: "5 km, 35 min"), SIGNIFICA QUE HÁ OBRIGATORIAMENTE UM OU MAIS DESLOCAMENTOS A PÉ NA TELA (ex: "A pé 4,9 km · 35 min" das 17:52 às 18:28).
+     * Se houver o ícone de carro 🚗 (ex: "43 km, 1h 6 min"), a soma dos deslocamentos de carro deve bater com esse total.
+     * Role visualmente até o fim absoluto da imagem para extrair essa caminhada! NUNCA pare de analisar antes de chegar ao último item do rodapé.
+
+3. TODOS OS DESLOCAMENTOS (NUNCA IGNORE NENHUM MODO):
    - A imagem é uma captura de tela longa de celular (rolagem vertical). VOCÊ DEVE LER DO INÍCIO AO FIM, até a última linha no rodapé da imagem. NUNCA pare no meio!
    - Extraia TODOS os trajetos de movimentação entre locais:
      * A pé / Caminhando (ícone de pedestre 🚶, texto "A pé" ou "Caminhando"). ATENÇÃO: Mesmo que a caminhada seja de ida e volta saindo e voltando para o mesmo ponto (ex: Casa -> Casa), EXTRAIA SEMPRE este deslocamento! É muito comum o trecho "A pé" estar próximo ao final da tela.
-     * Não há modo de trajeto (ícone de ponto de interrogação ❓ ou texto "Não há modo de trajeto"). Extraia com mode="Não há modo de trajeto".
+     * Não há modo de trajeto (ícone de ponto de interrogação ❓ ou texto "Não há modo de trajeto"). Extraia exatamente com mode="Não há modo de trajeto".
      * Dirigindo / Carro / Moto (ícone de veículo, texto "Dirigindo").
      * Bicicleta / Pedalando.
      * Transporte público (ônibus, metrô, trem).
@@ -41,7 +47,7 @@ DIRETRIZES FUNDAMENTAIS:
      * duration_min: duração em minutos (ex: 35).
      * details: qualquer nota ou dado visível (ex: passos, calorias, observações).
 
-3. TODAS AS PARADAS, VISITAS E ESTADIAS:
+4. TODAS AS PARADAS, VISITAS E ESTADIAS:
    - Extraia todos os locais visitados (residências, empresas, supermercados, órgãos públicos, etc.).
    - place_name: nome do estabelecimento ou local.
    - address: endereço exibido na tela.
@@ -49,7 +55,7 @@ DIRETRIZES FUNDAMENTAIS:
    - duration_min: duração da permanência em minutos, se informada.
    - details: notas ou eventos associados (ex: "Saiu às 07:03", "Chegou às 19:33", etc.).
 
-4. ANOTAÇÕES ADICIONAIS:
+5. ANOTAÇÕES ADICIONAIS:
    - additional_notes: registre qualquer outro detalhe, nota de viagem ou contexto textual presente na captura.
 
 Devolva a resposta estritamente conforme o esquema JSON especificado.
@@ -62,21 +68,8 @@ def extract_timeline_from_image(
     default_date: Optional[str] = None,
     model_name: Optional[str] = None,
 ) -> TimelineDay:
-    """Extrai os dados da captura de tela do Google Maps usando a API Gemini.
-
-    Args:
-        image_path_or_bytes: Caminho do arquivo ou instância PIL.Image / bytes.
-        api_key: Chave da API do Google Gemini (se None, lê de GEMINI_API_KEY).
-        default_date: Data padrão no formato YYYY-MM-DD caso a tela mostre apenas "Hoje".
-        model_name: Nome do modelo de visão (padrão: gemini-3.6-flash).
-
-    Returns:
-        TimelineDay: Instância tipada contendo os deslocamentos e visitas extraídos.
-    """
-    from dotenv import load_dotenv
-    load_dotenv(override=True)
-
-    model_to_use = model_name or os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+    """Extrai os dados da linha do tempo da imagem informada usando a API Gemini."""
+    model_to_use = model_name or "gemini-3.5-flash-lite"
     key = (api_key or os.getenv("GEMINI_API_KEY", "")).strip().strip('"').strip("'")
     if not key or key == "sua_chave_aqui":
         raise ValueError(
@@ -87,6 +80,9 @@ def extract_timeline_from_image(
     # Carrega a imagem via PIL
     if isinstance(image_path_or_bytes, Image.Image):
         img = image_path_or_bytes
+    elif isinstance(image_path_or_bytes, (bytes, bytearray)):
+        import io
+        img = Image.open(io.BytesIO(image_path_or_bytes))
     else:
         img = Image.open(image_path_or_bytes)
 

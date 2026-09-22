@@ -1,12 +1,22 @@
 """Aplicação Web Streamlit do AIRoute2Cal."""
 
 import os
+import importlib
 from datetime import date
 from io import BytesIO
 import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 from PIL import Image
+
+import src.models
+import src.calendar_generator
+import src.extractor
+
+# Força o recarregamento dos módulos locais para evitar cache desatualizado no processo do Streamlit
+importlib.reload(src.models)
+importlib.reload(src.calendar_generator)
+importlib.reload(src.extractor)
 
 from src.extractor import extract_timeline_from_image
 from src.calendar_generator import generate_ics, generate_outlook_csv
@@ -149,7 +159,18 @@ if uploaded_file:
 
     with col_data:
         st.subheader("Processamento com IA")
-        if st.button("🚀 Extrair Deslocamentos e Paradas", type="primary"):
+        btn_c1, btn_c2 = st.columns([2, 1])
+        with btn_c1:
+            extract_clicked = st.button("🚀 Extrair Deslocamentos e Paradas", type="primary", use_container_width=True)
+        with btn_c2:
+            clear_clicked = st.button("🗑️ Limpar / Reprocessar", use_container_width=True)
+
+        if clear_clicked:
+            if "timeline_result" in st.session_state:
+                del st.session_state["timeline_result"]
+            st.rerun()
+
+        if extract_clicked:
             if not active_api_key or active_api_key == "sua_chave_aqui":
                 st.error("Informe sua chave de API do Gemini na barra lateral ou no arquivo .env para prosseguir.")
             else:
@@ -178,8 +199,14 @@ if uploaded_file:
             displacements = getattr(timeline, "displacements", [])
             visits = getattr(timeline, "visits", [])
 
-            driving_disps = [d for d in displacements if "caminh" not in getattr(d, "mode", "dirigindo").lower() and "pé" not in getattr(d, "mode", "dirigindo").lower()]
-            walking_disps = [d for d in displacements if "caminh" in getattr(d, "mode", "dirigindo").lower() or "pé" in getattr(d, "mode", "dirigindo").lower()]
+            driving_disps = [
+                d for d in displacements
+                if any(k in getattr(d, "mode", "").lower() for k in ["dirig", "carro", "veíc", "veic", "moto"])
+            ]
+            walking_disps = [
+                d for d in displacements
+                if any(k in getattr(d, "mode", "").lower() for k in ["caminh", "pé", "pe", "walk", "pedestre"])
+            ]
 
             total_km = getattr(timeline, "total_km", None) or sum((getattr(d, "distance_km", 0.0) or 0.0) for d in displacements)
             driving_km = sum((getattr(d, "distance_km", 0.0) or 0.0) for d in driving_disps)
